@@ -1,80 +1,129 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Fork, clone, customize your matchups, and deploy Brandon's Matchups to Vercel in under 10 minutes.
 ---
 
-## Get started in three steps
+This guide walks you through getting a running version of the app with your own bracket matchups.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you start, make sure you have:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+- **Node.js** 18 or later
+- **pnpm** installed globally (`npm i -g pnpm`)
+- A **GitHub** account
+- A **Vercel** account (free tier is sufficient)
 
-### Step 2: Deploy your changes
+## Steps
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Steps>
+  <Step title="Fork the repository">
+    Go to [github.com/bb220/madness-tracker](https://github.com/bb220/madness-tracker) and click **Fork** to create a copy under your own GitHub account.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    <Tip>
+      Keeping the repo public makes the Vercel integration simpler on a free plan.
+    </Tip>
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Clone and install dependencies">
+    Clone your forked repository and install dependencies with pnpm.
 
-### Step 3: Go live
+    <CodeGroup>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```bash Clone your fork
+    git clone https://github.com/YOUR_USERNAME/madness-tracker.git
+    cd madness-tracker
+    ```
 
-## Next steps
+    ```bash Install dependencies
+    pnpm install
+    ```
 
-Now that you have your docs running, explore these key features:
+    </CodeGroup>
+  </Step>
 
-<CardGroup cols={2}>
+  <Step title="Customize your matchups">
+    Open `app/page.tsx` and replace the `matchups` array with your own bracket data.
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    The `Matchup` interface (defined in `components/matchup-card.tsx`) describes the shape of each entry:
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    ```typescript
+    export interface Matchup {
+      myTeam: string      // Your team's name
+      mySeed: number      // Your team's tournament seed
+      myScore: number     // Your team's current score (0 if not started)
+      theirTeam: string   // Opponent team's name
+      theirSeed: number   // Opponent team's seed
+      theirScore: number  // Opponent team's current score
+      spread: string      // Point spread, e.g. "+8.5", "-2.5", or "TBD"
+      role: "dog" | "fav" | "tbd"  // Your role: underdog, favorite, or pending
+      tipTime: string     // Tip-off time, e.g. "9:45 PM ET"
+      network: string     // Broadcast network, e.g. "CBS", "TBS/truTV"
+      date: string        // Game date, e.g. "Thu Mar 26"
+      region: string      // Tournament region, e.g. "West", "South"
+      opponent: string    // The bracket pool opponent you're facing
+    }
+    ```
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    Here is an example matchup pulled directly from the source:
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+    ```typescript
+    const matchups: Matchup[] = [
+      {
+        myTeam: "Arkansas",
+        mySeed: 4,
+        myScore: 88,
+        theirTeam: "Arizona",
+        theirSeed: 1,
+        theirScore: 109,
+        spread: "+8.5",
+        role: "dog",
+        tipTime: "9:45 PM ET",
+        network: "CBS",
+        date: "Thu Mar 26",
+        region: "West",
+        opponent: "Brady",
+      },
+    ]
+    ```
 
-</CardGroup>
+    <Tip>
+      Set `myScore` and `theirScore` to `0` for games that haven't started yet. The card will display a dash (`-`) instead of zero.
+    </Tip>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+    <Note>
+      The `role` field controls the card's color accent and badge label. Use `"dog"` for underdog (blue), `"fav"` for favorite (green), and `"tbd"` when the spread isn't set yet (gray).
+    </Note>
+  </Step>
+
+  <Step title="Run the development server">
+    Start the local dev server to preview your changes.
+
+    ```bash
+    pnpm dev
+    ```
+
+    Open [http://localhost:3000](http://localhost:3000) in your browser. You should see your matchup cards rendered on the page.
+  </Step>
+
+  <Step title="Deploy to Vercel">
+    Push your changes to your forked GitHub repository, then connect it to Vercel.
+
+    ```bash
+    git add app/page.tsx
+    git commit -m "customize matchups"
+    git push
+    ```
+
+    1. Go to [vercel.com](https://vercel.com) and click **Add New Project**.
+    2. Import your forked `madness-tracker` repository.
+    3. Leave all build settings at their defaults — Vercel detects Next.js automatically.
+    4. Click **Deploy**.
+
+    Once deployed, Vercel gives you a public URL. Every subsequent push to your repository (including automated pushes from Codex score-sync automations) will trigger a new deployment automatically.
+
+    <Tip>
+      Copy your Vercel deployment URL and bookmark it on your phone. The single-column layout is designed for mobile viewing.
+    </Tip>
+  </Step>
+</Steps>

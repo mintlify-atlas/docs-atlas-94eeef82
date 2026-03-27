@@ -1,0 +1,60 @@
+---
+title: Introduction
+description: Brandon's Matchups is a personalized March Madness bracket tracker built with Next.js that shows your games, live scores, spreads, and role badges — synced automatically via AI agent cron jobs.
+---
+
+Brandon's Matchups is a single-page Next.js app built to track one person's March Madness bracket matchups throughout the tournament. It displays your teams, their opponents, live scores, point spreads, and a role badge (Underdog, Favorite, or Pending) — all on a mobile-optimized card layout that updates itself automatically.
+
+The project explores what hyperspecialized personal software can look like when you pair a simple frontend with AI-powered data extraction and automated sync pipelines.
+
+<Note>
+  This is personal, experimental software — not a multi-tenant SaaS product. It is built for one user's bracket pool and is not designed to be a general-purpose application.
+</Note>
+
+## Who it's for
+
+Anyone who wants a focused, no-noise view of their own March Madness matchups. Rather than checking multiple apps or refreshing a spreadsheet, you get a single page that shows exactly the games you care about, styled for quick scanning on a phone.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Personalized matchup cards" icon="cards-blank" href="/reference/matchup-data-model">
+    Each card shows your team and seed, the opponent's team and seed, current scores, point spread, tip time, broadcast network, tournament region, and the bracket opponent you're facing.
+  </Card>
+  <Card title="Role system" icon="trophy" href="/reference/matchup-data-model">
+    Every matchup is tagged as Underdog, Favorite, or Pending based on the spread. Cards display a color-coded badge and left-border accent — blue for underdog, green for favorite, gray for pending.
+  </Card>
+  <Card title="AI-powered initial ETL" icon="robot" href="/how-it-works/data-pipeline">
+    Matchup data is bootstrapped by dropping a bracket pool CSV into Claude. Claude extracts the relevant matchups, enriches them with tip times and broadcast networks, and formats them into the `Matchup` array in `app/page.tsx`.
+  </Card>
+  <Card title="Automated score sync" icon="arrows-rotate" href="/how-it-works/sync-automation">
+    Codex automations (agent cron jobs) run on a schedule throughout the tournament. They scrape live spreads, scores, and results, then update the data in the source code directly and push to GitHub.
+  </Card>
+  <Card title="Auto-deploy via Vercel" icon="rocket" href="/reference/deployment">
+    Vercel listens for pushes to the GitHub repository. Every time Codex pushes a score update, Vercel rebuilds and deploys the app automatically — no manual deploys required.
+  </Card>
+  <Card title="Mobile-optimized layout" icon="mobile" href="/quickstart">
+    The app uses a fixed-width single-column layout (`max-w-sm`) designed to look sharp on a phone. The viewport is locked to prevent user scaling, keeping the card layout predictable.
+  </Card>
+</CardGroup>
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 |
+| UI library | React 19 |
+| Language | TypeScript 5.7 |
+| Styling | Tailwind CSS 4 |
+| Fonts | Bebas Neue (display), DM Sans (body) |
+| Analytics | Vercel Analytics |
+| Hosting | Vercel |
+| Score sync | Codex automations (agent cron jobs) |
+| Initial ETL | Claude (AI-assisted data extraction) |
+
+## How it works end to end
+
+1. **Initial setup** — You paste your bracket pool CSV into Claude. Claude identifies your matchups, pulls in game metadata, and generates the `matchups` array you paste into `app/page.tsx`.
+2. **Deploy** — You push the repo to GitHub and connect it to Vercel. The app goes live at a public URL.
+3. **Sync** — Codex automations run on a cron schedule. Each run scrapes current scores and spreads, patches `app/page.tsx` in place, and pushes the change to GitHub.
+4. **Auto-deploy** — Vercel detects the push and redeploys the app, usually within 30–60 seconds. Your live URL always shows current data.

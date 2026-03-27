@@ -1,0 +1,44 @@
+{
+  "projectType": "saas",
+  "projectName": "Brandon's Matchups",
+  "projectDescription": "A personalized March Madness bracket tracker that displays your matchups with live scores, spreads, and game details, synced automatically via AI agent cron jobs.",
+  "theme": "almond",
+  "primaryColor": "#ef711e",
+  "lightColor": "#733c1c",
+  "darkColor": "#1c1416",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "How It Works",
+            "pages": ["how-it-works/data-pipeline", "how-it-works/sync-automation"]
+          },
+          {
+            "group": "Reference",
+            "pages": ["reference/matchup-data-model", "reference/configuration", "reference/deployment"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Personalized matchup cards showing your teams vs. opponents with seed, score, and spread",
+    "Underdog/Favorite/TBD role badges per game",
+    "Real-time score and spread sync via Codex AI agent cron jobs",
+    "Automatic deployment via Vercel on every data update",
+    "CSV-to-matchup ETL powered by Claude AI for initial data extraction",
+    "Mobile-optimized single-page layout with per-game metadata (network, tip time, region)"
+  ],
+  "publicApiSurface": [
+    "Matchup interface: { myTeam, mySeed, myScore, theirTeam, theirSeed, theirScore, spread, role, tipTime, network, date, region, opponent }",
+    "MatchupCard component: renders a single matchup with all game details",
+    "role field: 'dog' | 'fav' | 'tbd' — determines card accent color and badge",
+    "matchups array in app/page.tsx — single source of truth for all game data"
+  ]
+}

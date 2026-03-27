@@ -1,0 +1,151 @@
+---
+title: Configuration
+description: Reference for configuring and customizing the matchups array and data conventions in Brandon's Matchups.
+---
+
+All game data in Brandon's Matchups is managed in a single file: `app/page.tsx`. There are no environment variables or external config files — the matchups array is the one configuration point you need to know.
+
+## The Matchups Array
+
+The `matchups` constant at the top of `app/page.tsx` is an array of `Matchup` objects. Every card on the page is rendered directly from this array.
+
+```typescript
+import { MatchupCard, type Matchup } from "@/components/matchup-card"
+
+const matchups: Matchup[] = [
+  {
+    myTeam: "Arkansas",
+    mySeed: 4,
+    myScore: 88,
+    theirTeam: "Arizona",
+    theirSeed: 1,
+    theirScore: 109,
+    spread: "+8.5",
+    role: "dog",
+    tipTime: "9:45 PM ET",
+    network: "CBS",
+    date: "Thu Mar 26",
+    region: "West",
+    opponent: "Brady",
+  },
+  {
+    myTeam: "Houston",
+    mySeed: 2,
+    myScore: 55,
+    theirTeam: "Illinois",
+    theirSeed: 3,
+    theirScore: 65,
+    spread: "-2.5",
+    role: "fav",
+    tipTime: "10:05 PM ET",
+    network: "TBS/truTV",
+    date: "Thu Mar 26",
+    region: "South",
+    opponent: "Raj",
+  },
+]
+```
+
+### Adding a New Matchup
+
+Append a new object to the array. Codex will keep scores up to date automatically, so you only need to fill in the pre-game metadata.
+
+```typescript
+const matchups: Matchup[] = [
+  // ... existing matchups
+  {
+    myTeam: "Duke",
+    mySeed: 1,
+    myScore: 0,
+    theirTeam: "Vermont",
+    theirSeed: 16,
+    theirScore: 0,
+    spread: "-22.5",
+    role: "fav",
+    tipTime: "12:15 PM ET",
+    network: "CBS",
+    date: "Fri Mar 21",
+    region: "East",
+    opponent: "Mia",
+  },
+]
+```
+
+### Removing a Matchup
+
+Delete the object from the array. The page automatically re-renders with only the remaining matchups and updates the footer stats (Games, Underdog, Favorite, TBD counts).
+
+### Editing a Matchup
+
+Change any field value in-place. The most common in-game edit is updating `myScore` and `theirScore` — Codex handles this automatically on each sync cycle.
+
+```typescript
+// Before tip-off
+myScore: 0,
+theirScore: 0,
+
+// Mid-game
+myScore: 42,
+theirScore: 38,
+```
+
+## Spread Formatting
+
+<Tip>
+  Always format spreads as a signed string. Use `"+"` for underdog, `"-"` for favorite, or `"TBD"` when the line is not yet posted.
+</Tip>
+
+| Scenario | Value | Example |
+|----------|-------|---------|
+| Your team is the underdog | Positive prefix `+` | `"+8.5"` |
+| Your team is the favorite | Negative prefix `-` | `"-2.5"` |
+| Spread not yet available | Literal string | `"TBD"` |
+
+The spread string value drives both the text color and the `role` field should match:
+- `spread` starts with `+` → set `role: "dog"`
+- `spread` starts with `-` → set `role: "fav"`
+- `spread === "TBD"` → set `role: "tbd"`
+
+## Date Formatting
+
+<Tip>
+  Use the short weekday + abbreviated month + day format: `"Thu Mar 26"`. Do not include the year.
+</Tip>
+
+Examples:
+
+```typescript
+date: "Thu Mar 20"   // First round Thursday
+date: "Fri Mar 21"   // First round Friday
+date: "Sun Mar 23"   // Second round Sunday
+date: "Thu Mar 26"   // Sweet 16
+```
+
+## Network Values
+
+The `network` field is a free-form string rendered as a badge on the card. Use the official short-form broadcast name.
+
+| Network | Value |
+|---------|-------|
+| CBS | `"CBS"` |
+| TBS or truTV simulcast | `"TBS/truTV"` |
+| TNT | `"TNT"` |
+| TruTV only | `"truTV"` |
+| ESPN | `"ESPN"` |
+| ESPN2 | `"ESPN2"` |
+
+## Score Initialization
+
+<Note>
+  Always initialize both `myScore` and `theirScore` to `0` when adding a new matchup. The card displays `-` instead of `0` when both values are zero, indicating the game has not started. Codex will update the scores automatically once the game begins.
+</Note>
+
+```typescript
+// Correct — scores not yet set
+myScore: 0,
+theirScore: 0,
+
+// Incorrect — do not use null or undefined
+myScore: null,     // TypeScript error
+theirScore: undefined, // TypeScript error
+```

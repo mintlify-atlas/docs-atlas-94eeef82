@@ -1,0 +1,149 @@
+---
+title: Matchup Data Model
+description: Complete reference for the Matchup TypeScript interface used throughout Brandon's Matchups.
+---
+
+The `Matchup` interface is the core data structure powering every card in the tracker. It is defined in `components/matchup-card.tsx` and imported into `app/page.tsx` where all game data lives.
+
+## TypeScript Interface
+
+```typescript
+export interface Matchup {
+  myTeam: string
+  mySeed: number
+  myScore: number
+  theirTeam: string
+  theirSeed: number
+  theirScore: number
+  spread: string
+  role: "dog" | "fav" | "tbd"
+  tipTime: string
+  network: string
+  date: string
+  region: string
+  opponent: string
+}
+```
+
+## Fields
+
+<ParamField path="myTeam" type="string" required>
+  Your team's name as it appears on the card header. Example: `"Arkansas"`
+</ParamField>
+
+<ParamField path="mySeed" type="number" required>
+  Your team's tournament seed. Valid range is 1–16. Displayed as a small superscript next to the team name (e.g., `#4`).
+</ParamField>
+
+<ParamField path="myScore" type="number" required>
+  Your team's current score. Set to `0` before the game starts — the card will display `-` instead of `0` when both scores are zero.
+</ParamField>
+
+<ParamField path="theirTeam" type="string" required>
+  The opposing team's name. Displayed in a lighter weight and color to visually distinguish it from your team. Example: `"Arizona"`
+</ParamField>
+
+<ParamField path="theirSeed" type="number" required>
+  The opposing team's tournament seed (1–16).
+</ParamField>
+
+<ParamField path="theirScore" type="number" required>
+  The opposing team's current score. Set to `0` before tip-off.
+</ParamField>
+
+<ParamField path="spread" type="string" required>
+  The point spread for the matchup. Formatted as a signed string:
+  - `"+8.5"` — your team is an 8.5-point underdog
+  - `"-2.5"` — your team is a 2.5-point favorite
+  - `"TBD"` — spread not yet set
+
+  The spread value drives text color: `+` values render in blue (`#0057a8`), `-` values in green (`#16a34a`), and `"TBD"` in muted gray.
+</ParamField>
+
+<ParamField path="role" type="dog | fav | tbd" required>
+  Indicates your team's role in the matchup. Controls the card's left accent bar color and the role badge label.
+
+  | Value | Label | Accent color |
+  |-------|-------|--------------|
+  | `"dog"` | Underdog | Blue `#0057a8` |
+  | `"fav"` | Favorite | Green `#16a34a` |
+  | `"tbd"` | Pending | Gray `#b0c4d8` |
+</ParamField>
+
+<ParamField path="tipTime" type="string" required>
+  The scheduled tip time in Eastern Time. Example: `"9:45 PM ET"`
+</ParamField>
+
+<ParamField path="network" type="string" required>
+  The broadcast network carrying the game. Rendered as a small pill badge next to the tip time. Examples: `"CBS"`, `"TBS/truTV"`
+</ParamField>
+
+<ParamField path="date" type="string" required>
+  The game date using the short weekday + month + day format. Example: `"Thu Mar 26"`
+</ParamField>
+
+<ParamField path="region" type="string" required>
+  The NCAA tournament region. Displayed as a small label in the top-right corner of the card. Example: `"West"`, `"South"`
+</ParamField>
+
+<ParamField path="opponent" type="string" required>
+  The name of your bracket pool opponent — the person you are facing in this round. Displayed in the card footer as `vs Brandon`. Example: `"Brady"`
+</ParamField>
+
+## Role Visual Effects
+
+The `role` field determines three visual elements on each card:
+
+1. **Left accent bar** — a colored stripe on the left edge of the card
+2. **Role badge** — a pill in the card footer labeling the team as Underdog, Favorite, or Pending
+3. **Spread color** — the spread string color also correlates to underdog (blue) vs. favorite (green)
+
+| `role` | Accent bar | Badge background | Badge text |
+|--------|-----------|-----------------|------------|
+| `"dog"` | `#0057a8` (blue) | `#0057a8` at 10% opacity | `#0057a8` (blue) |
+| `"fav"` | `#16a34a` (green) | `#16a34a` at 12% opacity | `#16a34a` (green) |
+| `"tbd"` | `#b0c4d8` (gray) | `#b0c4d8` at 25% opacity | `#7a9bb5` (muted blue-gray) |
+
+## Score Display Logic
+
+Scores are formatted by the `formatScore` helper inside `MatchupCard`:
+
+```typescript
+const formatScore = (score: number) => (score === 0 ? "-" : `${score}`)
+```
+
+- Any score of `0` displays as `-`. This applies independently to each side — if `myScore` is `0` but `theirScore` is `42`, your side shows `-` while theirs shows `42`.
+- Once a score is non-zero it renders as its numeric value.
+
+The score difference shown in the meta row is computed as:
+
+```typescript
+const scoreDiff = theirScore - myScore
+const formattedScoreDiff = scoreDiff === 0 ? "-" : scoreDiff > 0 ? `+${scoreDiff}` : `${scoreDiff}`
+```
+
+A positive `scoreDiff` means your team is losing; a negative value means your team leads.
+
+## Example Matchup Object
+
+The following object is taken directly from `app/page.tsx`:
+
+```typescript
+{
+  myTeam: "Arkansas",
+  mySeed: 4,
+  myScore: 88,
+  theirTeam: "Arizona",
+  theirSeed: 1,
+  theirScore: 109,
+  spread: "+8.5",
+  role: "dog",
+  tipTime: "9:45 PM ET",
+  network: "CBS",
+  date: "Thu Mar 26",
+  region: "West",
+  opponent: "Brady",
+}
+```
+
+This card will render with a **blue** left accent bar (underdog), an `"Underdog"` badge, and a `+8.5` spread in blue. The score row shows `88` vs `109`, and the score difference is `+21` (opponent leading).

@@ -1,0 +1,129 @@
+---
+title: Data Pipeline
+description: How bracket pool data gets extracted, transformed, and loaded into the app at the start of the tournament.
+---
+
+At the start of the tournament, you have a bracket pool CSV with dozens of matchups — most of which have nothing to do with you. The data pipeline is a one-time process that extracts only **your matchups**, transforms them into the shape the app expects, enriches them with game metadata, and loads them into `app/page.tsx` as the single source of truth.
+
+Once this is done, the [sync automation](/how-it-works/sync-automation) takes over for the rest of the tournament.
+
+<Steps>
+  <Step title="Extract with Claude">
+    Drop your bracket pool CSV into [Claude](https://claude.ai/) and ask it to extract only the matchups that are relevant to you.
+
+    **What "relevant" means in this context:**
+
+    - The teams you drafted in your bracket
+    - The opponent in your pool you are facing in each matchup (the person whose team is on the other side)
+    - The round (Round of 64, Sweet 16, Elite Eight, etc.)
+    - The region (East, West, South, Midwest)
+
+    A good prompt to use with Claude:
+
+    ```text
+    Here is my bracket pool CSV. Extract only the matchups that involve my teams.
+    My teams are: [list your teams].
+    For each matchup, include: my team, my seed, their team, their seed,
+    the region, the round, and the name of the pool opponent I am facing.
+    ```
+
+    <Tip>
+      Be specific about which pool participant is "you" so Claude knows which column represents your picks vs. your opponents' picks.
+    </Tip>
+  </Step>
+
+  <Step title="Transform into matchup data">
+    Once Claude returns a clean list of your matchups, transform that data into the `Matchup` interface format the app expects.
+
+    Here is the exact interface defined in `components/matchup-card.tsx`:
+
+    ```typescript
+    export interface Matchup {
+      myTeam: string      // Your drafted team
+      mySeed: number      // Your team's seed
+      myScore: number     // Live or final score (0 if not yet played)
+      theirTeam: string   // The opponent's team in the game
+      theirSeed: number   // Their seed
+      theirScore: number  // Their live or final score (0 if not yet played)
+      spread: string      // Point spread, e.g. "+8.5" or "-2.5" or "TBD"
+      role: "dog" | "fav" | "tbd"  // Are you the underdog, favorite, or unknown?
+      tipTime: string     // Tip-off time, e.g. "9:45 PM ET"
+      network: string     // Broadcast network, e.g. "CBS" or "TBS/truTV"
+      date: string        // Game date, e.g. "Thu Mar 26"
+      region: string      // Tournament region, e.g. "West"
+      opponent: string    // Your pool opponent's name
+    }
+    ```
+
+    **Key fields to pay attention to:**
+
+    - `role` controls the color-coded left border on the card (`dog` = blue, `fav` = green, `tbd` = gray)
+    - `spread` is a string so it can represent `"+8.5"`, `"-2.5"`, or `"TBD"`
+    - `myScore` and `theirScore` start at `0` before the game tips — the card renders a dash for zero values
+  </Step>
+
+  <Step title="Scrape game metadata">
+    The pool CSV usually does not include tip-off times or broadcast networks. You need to scrape or look these up and add them to each matchup object.
+
+    **Where to find this data:**
+
+    - NCAA.com bracket for official schedules
+    - ESPN or CBS Sports for tip times and network assignments
+    - Sports betting sites (DraftKings, FanDuel) for opening spreads
+
+    <Tip>
+      You can ask Claude to help look up tip times and networks for your specific matchups once you have the list — paste the schedule page content into the conversation.
+    </Tip>
+  </Step>
+
+  <Step title="Populate app/page.tsx">
+    The `matchups` array in `app/page.tsx` is the **single source of truth** for the entire app. Paste your completed matchup objects into this array.
+
+    Here is a real example from the app showing two fully populated matchups:
+
+    ```typescript
+    const matchups: Matchup[] = [
+      {
+        myTeam: "Arkansas",
+        mySeed: 4,
+        myScore: 88,
+        theirTeam: "Arizona",
+        theirSeed: 1,
+        theirScore: 109,
+        spread: "+8.5",
+        role: "dog",
+        tipTime: "9:45 PM ET",
+        network: "CBS",
+        date: "Thu Mar 26",
+        region: "West",
+        opponent: "Brady",
+      },
+      {
+        myTeam: "Houston",
+        mySeed: 2,
+        myScore: 55,
+        theirTeam: "Illinois",
+        theirSeed: 3,
+        theirScore: 65,
+        spread: "-2.5",
+        role: "fav",
+        tipTime: "10:05 PM ET",
+        network: "TBS/truTV",
+        date: "Thu Mar 26",
+        region: "South",
+        opponent: "Raj",
+      },
+    ]
+    ```
+
+    <Info>
+      Scores start at `0` before tip-off. Leave `myScore` and `theirScore` as `0` when you first populate the array — Codex will update them automatically once games start.
+    </Info>
+  </Step>
+</Steps>
+
+## What comes next
+
+With the matchups array populated and the app deployed to Vercel, the manual work is done. From this point forward, Codex automations handle all score and result updates automatically throughout the tournament.
+
+See [Sync Automation](/how-it-works/sync-automation) to learn how the automated update loop works.

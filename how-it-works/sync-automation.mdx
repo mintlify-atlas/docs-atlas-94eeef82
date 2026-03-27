@@ -1,0 +1,121 @@
+---
+title: Sync Automation
+description: How Codex automations keep scores, spreads, and results up to date throughout the tournament without any manual intervention.
+---
+
+Once the [data pipeline](/how-it-works/data-pipeline) is complete and the app is live, you do not touch the code again. Codex automations take over and keep everything current for the rest of the tournament.
+
+<Note>
+This is experimental software. Codex is writing directly to production source code and pushing to GitHub. It works, but it is not a pattern you would use in a production multi-tenant app.
+</Note>
+
+## The automation loop
+
+The full cycle from data change to live site looks like this:
+
+```
+Codex automation runs on schedule
+        │
+        ▼
+Codex scrapes scores, spreads, and results
+        │
+        ▼
+Codex updates matchups array in app/page.tsx
+        │
+        ▼
+Codex commits and pushes to GitHub
+        │
+        ▼
+Vercel detects new commit on main branch
+        │
+        ▼
+Vercel rebuilds and deploys automatically
+        │
+        ▼
+Live site reflects the latest scores
+```
+
+No manual deploys. No dashboards to check. The site just stays current.
+
+## What Codex updates
+
+For each matchup in the `matchups` array, the Codex automation scrapes and updates:
+
+| Field | What it means |
+|---|---|
+| `myScore` | Your team's current or final score |
+| `theirScore` | The opponent's current or final score |
+| `spread` | Current point spread from betting markets |
+| `role` | Whether you're the favorite, underdog, or TBD |
+
+The rest of the fields — team names, seeds, tip time, network, date, region, pool opponent — are static and set once during the initial data pipeline.
+
+## Setting up Codex automations
+
+<Steps>
+  <Step title="Create a Codex account and open automations">
+    Go to [developers.openai.com/codex/app/automations](https://developers.openai.com/codex/app/automations) and sign in.
+
+    A **Codex automation** is an agent cron job — a scheduled task where you write a plain-English prompt describing what you want an AI agent to do, and Codex runs it on a schedule against your codebase.
+  </Step>
+
+  <Step title="Connect your GitHub repository">
+    Give Codex access to the repository where your app lives. It needs read and write access so it can commit updated matchup data back to the repo.
+  </Step>
+
+  <Step title="Write the automation prompt">
+    The prompt is the instruction set Codex follows every time it runs. Be specific about what to scrape, where to find it, and exactly how to update the code.
+
+    A good starting prompt:
+
+    ```text
+    Go to ESPN or the NCAA bracket page and look up the current scores
+    and results for the following games: [list your matchups].
+
+    For each game, update the myScore, theirScore, spread, and role fields
+    in the matchups array in app/page.tsx.
+
+    If a game has not started yet, leave myScore and theirScore as 0.
+    If a game is final, set the scores to the final values.
+    Update the spread field with the current line from a sports betting source.
+    Update role to "fav" if the spread is negative, "dog" if positive.
+
+    Commit the changes with the message "chore: sync scores [date]"
+    and push to main.
+    ```
+
+    <Tip>
+      List your matchups explicitly in the prompt by team name so Codex knows exactly which games to look for. Vague instructions lead to incomplete updates.
+    </Tip>
+  </Step>
+
+  <Step title="Set the schedule">
+    Configure how often the automation runs. During game days, you want this running frequently — every 15 to 30 minutes is reasonable for live score tracking.
+
+    On off days between rounds, a once-daily run is enough to pick up any spread movement.
+
+    <Warning>
+      Running automations too frequently can result in many small commits to your repo. Consider batching updates or using a longer interval on off days.
+    </Warning>
+  </Step>
+
+  <Step title="Verify Vercel is watching the repo">
+    In your Vercel project settings, confirm that automatic deployments are enabled for the `main` branch (or whichever branch you are pushing to).
+
+    Every time Codex pushes a commit, Vercel will detect it, rebuild the Next.js app, and deploy the new version to your production domain — no action required on your part.
+  </Step>
+</Steps>
+
+## The Vercel deployment side
+
+Vercel's GitHub integration handles the deployment half of the loop automatically. Once set up:
+
+- Every push to `main` triggers a new build
+- Builds typically complete in under a minute for a small Next.js app
+- The production URL updates automatically — no manual promote step needed
+
+Because the `matchups` array is baked into the page at build time (no database, no API calls at runtime), each Vercel build produces a fresh static snapshot of the current scores. The site is fast and has no backend dependencies.
+
+<Info>
+This is a static data model — scores are embedded directly in the built HTML. The tradeoff is that you need a new build for every data update, which is exactly what the Codex → GitHub → Vercel loop provides.
+</Info>
